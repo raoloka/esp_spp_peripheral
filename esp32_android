@@ -1,0 +1,21 @@
+The esp32 server in esp-idf 5.4 needs the following addition in uart_task after reading a character (when spp_mtu_size < 3)
+ esp_ble_gatts_send_indicate(spp_gatts_if, spp_conn_id, spp_handle_table[SPP_IDX_SPP_DATA_NTY_VAL],event.size, temp, false);
+Next this can be connected to an android app, simple_bluetooth_le_terminal.
+    https://github.com/kai-morich/SimpleBluetoothTerminal
+It is necessary to choose the Bluetooth Le option in the device scanning step.
+Secondly, the following two uuids have to be added to the list in serialsocket.java.
+    private static final UUID BLUETOOTH_ESP_SERVICE = UUID.fromString("0000ABF0-0000-1000-8000-00805F9B34FB");
+    private static final UUID BLUETOOTH_ESP_SERVICE_R = UUID.fromString("0000ABF2-0000-1000-8000-00805F9B34FB");
+    private static final UUID BLUETOOTH_ESP_SERVICE_W = UUID.fromString("0000ABF3-0000-1000-8000-00805F9B34FB");
+And add the following DeviceDelegate has to be added as well.
+    private class ESPDelegate extends DeviceDelegate{
+        @Override
+        boolean connectCharacteristics(BluetoothGattService gattService) {
+            readCharacteristic = gattService.getCharacteristic(BLUETOOTH_ESP_SERVICE_R);
+            writeCharacteristic = gattService.getCharacteristic(BLUETOOTH_ESP_SERVICE_W);
+            if (writeCharacteristic == null && readCharacteristic == null) {
+                return false;
+            }
+            return true;
+        }
+    }
